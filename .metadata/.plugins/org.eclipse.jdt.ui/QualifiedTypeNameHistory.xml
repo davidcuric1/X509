@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="java.security.KeyStore"/>
+<fullyQualifiedTypeName name="org.bouncycastle.asn1.x509.SubjectKeyIdentifier"/>
+<fullyQualifiedTypeName name="org.bouncycastle.x509.extension.X509ExtensionUtil"/>
+<fullyQualifiedTypeName name="org.bouncycastle.crypto.generators.ECKeyPairGenerator"/>
+<fullyQualifiedTypeName name="org.bouncycastle.asn1.sec.SECNamedCurves"/>
+<fullyQualifiedTypeName name="org.bouncycastle.crypto.params.ECDomainParameters"/>
+<fullyQualifiedTypeName name="org.bouncycastle.crypto.params.ECKeyGenerationParameters"/>
+<fullyQualifiedTypeName name="java.security.SecureRandom"/>
+<fullyQualifiedTypeName name="org.bouncycastle.crypto.AsymmetricCipherKeyPair"/>
+<fullyQualifiedTypeName name="java.security.spec.ECGenParameterSpec"/>
+<fullyQualifiedTypeName name="org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey"/>
+<fullyQualifiedTypeName name="java.io.File"/>
+<fullyQualifiedTypeName name="org.bouncycastle.asn1.eac.RSAPublicKey"/>
+</qualifiedTypeNameHistroy>

@@ -1,0 +1,403 @@
+package implementation;
+
+import java.io.*;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPublicKey;
+import java.util.Date;
+import java.util.Enumeration;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
+import code.GuiException;
+import gui.Constants;
+import gui.GuiInterfaceV1;
+
+public class MyCode extends x509.v3.CodeV3 {
+	
+	private KeyStore myKeystore;
+
+	public MyCode(boolean[] algorithm_conf, boolean[] extensions_conf, boolean extensions_rules) throws GuiException {
+		super(algorithm_conf, extensions_conf, extensions_rules);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public boolean canSign(String keypair_name) {
+		try {
+			if(!myKeystore.containsAlias(keypair_name))return false;
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		try {
+			X509Certificate certificate = (X509Certificate) myKeystore.getCertificate(keypair_name);
+			int CAconstant = certificate.getBasicConstraints();
+			if(CAconstant == -1)return false;
+			return true;
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		
+	}
+
+	@Override
+	public boolean exportCSR(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean exportCertificate(String arg0, String arg1, int arg2, int arg3) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean exportKeypair(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String getCertPublicKeyAlgorithm(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getCertPublicKeyParameter(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getSubjectInfo(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean importCAReply(String arg0, String arg1) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String importCSR(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean importCertificate(String arg0, String arg1) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean importKeypair(String keypair_name, String file, String password) {
+		FileInputStream istream = null;
+		FileOutputStream ostream = null;
+		KeyStore keystore = null;
+		try {
+			istream = new FileInputStream(file);
+			keystore = KeyStore.getInstance("pkcs12", "BC");
+			keystore.load(istream, "password".toCharArray());
+			String alias = keystore.aliases().nextElement();
+			Key key = keystore.getKey(alias, "password".toCharArray());
+			Certificate[] chain = keystore.getCertificateChain(alias);
+			myKeystore.setKeyEntry(alias, key, null, chain);
+			
+			ostream = new FileOutputStream("myKeystore.p12");
+			myKeystore.store(ostream, "password".toCharArray());
+			
+			
+			
+		}catch(Exception e) {return false;}
+		
+		finally {
+			if(ostream!=null)
+				try {
+					ostream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+			if(istream!=null)
+				try {
+					istream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+		}
+		return true;
+		
+	}
+
+	@Override
+	public int loadKeypair(String keypair_name) {
+		try {
+			boolean bool = false;
+			bool = myKeystore.containsAlias(keypair_name);
+			if (bool == false)return -1;
+			X509Certificate certificate = (X509Certificate)myKeystore.getCertificate(keypair_name);
+			
+			int certificate_version = certificate.getVersion();
+			if(certificate_version != 2) {
+				GuiInterfaceV1.reportError("Aplikacijom je podrzana samo verzija 3 sertifikata.");
+				return -1;
+			}
+			
+			access.setVersion(certificate_version);
+			access.setNotAfter(certificate.getNotAfter());
+			access.setNotBefore(certificate.getNotBefore());
+			access.setPublicKeyAlgorithm(certificate.getPublicKey().getAlgorithm());
+			access.setSerialNumber(certificate.getSerialNumber().toString());
+			access.setPublicKeyDigestAlgorithm(certificate.getSigAlgName());
+			PublicKey public_key = certificate.getPublicKey();
+			if(public_key instanceof ECPublicKey) { //OVAJ DEO PROVERI!!!
+				ECPublicKey eckey = (ECPublicKey) certificate.getPublicKey();
+				access.setPublicKeyParameter(Integer.toString(eckey.getParameters().getN().bitLength()));
+				
+				
+			}
+			///////EKSTENZIJE DODAJ/////
+			
+			
+			//////KRAJ EKSTENZIJA/////
+			X509CertificateHolder certificate_holder = new X509CertificateHolder(certificate.getEncoded());
+			
+			X500Name subject_name = certificate_holder.getSubject();
+			String ime = subject_name.toString();
+			access.setSubject(ime);
+			access.setSubjectSignatureAlgorithm(certificate.getPublicKey().getAlgorithm());
+			
+			X500Name issuer = certificate_holder.getIssuer();
+			
+			if(!subject_name.equals(issuer)) {
+				access.setIssuer(issuer.toString());
+				access.setIssuerSignatureAlgorithm(certificate.getSigAlgName());
+				return 1;
+			}
+			if(subject_name.equals(issuer))return 0;
+			if(myKeystore.isCertificateEntry(keypair_name)) {
+				if(subject_name.equals(issuer) == false) {
+					access.setIssuer(issuer.toString());
+					access.setIssuerSignatureAlgorithm(certificate.getSigAlgName());
+					return 2;
+				}
+			}
+			
+		}catch(Exception e) {
+			e.printStackTrace();
+			return -1;
+		}
+		return 0;
+		
+	}
+
+	@Override
+	public Enumeration<String> loadLocalKeystore() {
+		FileInputStream inputstream = null;
+		FileOutputStream outputstream = null;
+		
+		try {
+			Security.addProvider(new BouncyCastleProvider());
+			myKeystore = KeyStore.getInstance("pkcs12", "BC");
+			try {
+				inputstream = new FileInputStream("myKeystore.p12");
+				myKeystore.load(inputstream, "password".toCharArray());
+			}catch(FileNotFoundException e) {
+				myKeystore.load(null,null);
+				outputstream = new FileOutputStream("myKeystore.p12");
+				myKeystore.store(outputstream, "password".toCharArray());
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}finally{
+			try {
+			if(inputstream != null)
+				inputstream.close();
+			if(outputstream != null)
+				outputstream.close();
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		try {
+			return myKeystore.aliases();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			
+		}
+		return null; // ako baci exception
+	
+	}
+
+	@Override
+	public boolean removeKeypair(String keypair_name) {
+		FileOutputStream ostream = null;		
+		try {
+			ostream = new FileOutputStream("myKeystore.p12");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		try {
+			myKeystore.deleteEntry(keypair_name);
+			myKeystore.store(ostream,"password".toCharArray());
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		finally {
+			if(ostream!=null)
+				try {
+					ostream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+		}
+		return true;
+		
+		
+	}
+
+	@Override
+	public void resetLocalKeystore() {
+		FileOutputStream ostream = null;
+		try {
+			ostream = new FileOutputStream("myKeystore.p12");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			KeyStore.getInstance("pkcs12","BC");
+			myKeystore.load(null,null);
+			
+			myKeystore.store(ostream, "password".toCharArray());
+			
+			
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally {
+			if(ostream != null)
+				try {
+					ostream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+		return;
+		
+	}
+
+	@Override
+	public boolean saveKeypair(String keypair_name) {
+		FileOutputStream ostream = null;
+		int cert_version = access.getVersion();
+		if(cert_version != Constants.V3) {
+			GuiInterfaceV1.reportError("Aplikacija podrzava samo verziju 3 sertifikata.");
+			return false;
+		}
+		String algorithm = access.getPublicKeyAlgorithm();
+		if(algorithm != "EC") {
+			GuiInterfaceV1.reportError("Aplikacija podrzava samo EC algoritam.");
+			return false;
+		}
+		try {
+			if(myKeystore.containsAlias(keypair_name)) {
+				GuiInterfaceV1.reportError("Zeljeni alias vec postoji u keystore-u.");
+				return false;
+			}
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm, "BC");
+			
+			Date notBefore = access.getNotBefore();
+			Date notAfter = access.getNotAfter();
+			X500Name subject_name = new X500Name(access.getSubject());
+			BigInteger serial_number = new BigInteger(access.getSerialNumber());
+			int keylength = Integer.parseInt(access.getPublicKeyParameter());
+			String digest_algorithm = access.getPublicKeyDigestAlgorithm();
+			
+			keyGen.initialize(keylength);
+			KeyPair key_pair = keyGen.generateKeyPair();
+			PublicKey public_key = key_pair.getPublic();
+			PrivateKey private_key = key_pair.getPrivate();
+			
+			X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(subject_name, serial_number, notBefore, notAfter,
+					subject_name, public_key);
+			
+			ContentSigner content_signer = new JcaContentSignerBuilder(digest_algorithm).setProvider("BC").build(private_key);
+			/////EKSTENZIJE DODAJ/////
+			
+			/////KRAJ EKSTENZIJA/////
+			X509CertificateHolder cert_holder = builder.build(content_signer);
+			X509Certificate certificate = new JcaX509CertificateConverter().getCertificate(cert_holder);
+			ostream = new FileOutputStream("myKeystore.p12");
+			
+			X509Certificate[] certificate_chain = new X509Certificate[1];
+			certificate_chain[0] = certificate;
+			
+			myKeystore.setKeyEntry(keypair_name, private_key,null, certificate_chain);
+			myKeystore.store(ostream, "password".toCharArray());
+			
+			
+		}catch(Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		finally {
+			if(ostream!=null)
+				try {
+					ostream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+		return true;
+			
+	}
+
+	@Override
+	public boolean signCSR(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+}

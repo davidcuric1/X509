@@ -1,0 +1,183 @@
+package implementation;
+
+import java.io.*;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.util.Enumeration;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import code.GuiException;
+
+public class MyCode extends x509.v3.CodeV3 {
+	
+	private KeyStore myKeystore;
+
+	public MyCode(boolean[] algorithm_conf, boolean[] extensions_conf, boolean extensions_rules) throws GuiException {
+		super(algorithm_conf, extensions_conf, extensions_rules);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public boolean canSign(String arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean exportCSR(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean exportCertificate(String arg0, String arg1, int arg2, int arg3) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean exportKeypair(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String getCertPublicKeyAlgorithm(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getCertPublicKeyParameter(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getSubjectInfo(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean importCAReply(String arg0, String arg1) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String importCSR(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean importCertificate(String arg0, String arg1) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean importKeypair(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int loadKeypair(String arg0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public Enumeration<String> loadLocalKeystore() {
+		FileInputStream inputstream = null;
+		FileOutputStream outputstream = null;
+		
+		try {
+			myKeystore = KeyStore.getInstance("pkcs12", new BouncyCastleProvider());
+			try {
+				inputstream = new FileInputStream("myKeystore.p12");
+				myKeystore.load(inputstream, "password".toCharArray());
+			}catch(FileNotFoundException e) {
+				myKeystore.load(null,null);
+				outputstream = new FileOutputStream("myKeystore.p12");
+				myKeystore.store(outputstream, "password".toCharArray());
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}finally{
+			try {
+			if(inputstream != null)
+				inputstream.close();
+			if(outputstream != null)
+				outputstream.close();
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		try {
+			return myKeystore.aliases();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			
+		}
+		return null; // ako baci exception
+	
+	}
+
+	@Override
+	public boolean removeKeypair(String arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void resetLocalKeystore() {
+		FileOutputStream ostream = null;
+		try {
+			ostream = new FileOutputStream("myKeystore.p12");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			KeyStore.getInstance("pkcs12", new BouncyCastleProvider());
+			myKeystore.load(null,null);
+			
+			myKeystore.store(ostream, "password".toCharArray());
+			
+			
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally {
+			if(ostream != null)
+				try {
+					ostream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+		return;
+		
+	}
+
+	@Override
+	public boolean saveKeypair(String arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean signCSR(String arg0, String arg1, String arg2) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+}
